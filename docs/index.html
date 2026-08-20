@@ -227,7 +227,9 @@ img{display:block;max-width:100%}
   border-top:1px solid var(--outline-variant);
   padding:6px 14px calc(6px + env(safe-area-inset-bottom))}
 .tl-head{display:flex;align-items:center;gap:10px;height:34px}
-.tl-clock{flex:0 0 auto;font:700 24px/26px var(--mono);letter-spacing:-1.2px}
+.tl-clock{flex:0 0 auto;border:0;background:none;padding:0 2px;cursor:pointer;
+  color:inherit;font:700 24px/26px var(--mono);letter-spacing:-1.2px}
+.tl-clock[data-off="1"]{color:var(--primary)}
 .tl-sub{flex:1 1 auto;min-width:0;color:var(--on-surface-variant);
   font:400 12px/16px var(--font);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tl-sub b{color:var(--on-surface);font-weight:700}
@@ -244,7 +246,7 @@ img{display:block;max-width:100%}
 #tlToggle[aria-expanded="false"] svg{transform:rotate(180deg)}
 /* collapsed: the dock becomes a pill that still scrubs, and gives the list its space back */
 .timeline[data-collapsed="1"]{
-  left:12px;right:auto;width:auto;bottom:calc(12px + env(safe-area-inset-bottom));
+  left:auto;right:12px;width:auto;bottom:calc(12px + env(safe-area-inset-bottom));
   border:1px solid var(--outline-variant);border-radius:var(--corner-full);
   padding:5px 7px 5px 15px;box-shadow:var(--elev-2)}
 .timeline[data-collapsed="1"] .tl-sub,
@@ -613,7 +615,7 @@ img{display:block;max-width:100%}
 
     <div class="timeline" id="timeline" data-collapsed="0">
       <div class="tl-head">
-        <span class="tl-clock" id="clock">19:00</span>
+        <button class="tl-clock" id="clock" data-off="0">19:00</button>
         <span class="tl-sub" id="tlSub"></span>
         <div class="tl-nudge">
           <button id="tPrev" aria-label="Back 15 minutes"><svg><use href="#i-prev"/></svg></button>
@@ -686,6 +688,7 @@ en:{code:'EN',name:'English',
  added:'Added to your plan', removed:'Removed from your plan', loaded:'Loaded “{n}”', cleared:'Plan cleared',
  reset:'Reset', done:'Done', language:'Language', theme:'Theme',
  timeline:'Timeline', collapse:'Collapse the timeline', expand:'Open the timeline',
+ nowLbl:'Jump to the time it is now',
  openShort:'Normally closed', openDoors:'Doors that are normally shut',
  openDoorsSub:'This place is not usually open to the public, or not at this hour. Tonight it is.',
  rareShort:'Seldom seen', rareLong:'You will not get this again soon',
@@ -732,6 +735,7 @@ fi:{code:'FI',name:'Suomi',
  added:'Lisätty iltaan', removed:'Poistettu illasta', loaded:'Ladattiin ”{n}”', cleared:'Ilta tyhjennetty',
  reset:'Tyhjennä', done:'Valmis', language:'Kieli', theme:'Teema',
  timeline:'Aikajana', collapse:'Pienennä aikajana', expand:'Avaa aikajana',
+ nowLbl:'Hyppää nykyhetkeen',
  openShort:'Normaalisti kiinni', openDoors:'Ovet jotka ovat yleensä kiinni',
  openDoorsSub:'Tämä paikka ei ole tavallisesti yleisölle auki, tai ei tähän aikaan. Tänä iltana on.',
  rareShort:'Harvoin nähty', rareLong:'Tätä ei näe hetkeen uudelleen',
@@ -778,6 +782,7 @@ zh:{code:'中',name:'中文',
  added:'已加入计划', removed:'已从计划移除', loaded:'已载入「{n}」', cleared:'计划已清空',
  reset:'重置', done:'完成', language:'语言', theme:'主题',
  timeline:'时间轴', collapse:'收起时间轴', expand:'展开时间轴',
+ nowLbl:'跳到当前时刻',
  openShort:'平时不开放', openDoors:'平时不开的门',
  openDoorsSub:'这个地方平时不对公众开放，或者不在这个时段开放。今晚开。',
  rareShort:'难得一见', rareLong:'错过要等很久',
@@ -852,7 +857,10 @@ const bloomHero=open=>open
 const wxAt=m=>WX.find(w=>w[0]===Math.min(26,Math.max(12,Math.floor(m/60))))||WX[0];
 
 let justToggled=null;
-let lang='en',T=1140,mode='now',minRank=2,cats=new Set(),shelter='any',
+/* Hours after midnight belong to the same evening, so 01:30 is 25:30. */
+function nowMin(){const d=new Date();const m=d.getHours()*60+d.getMinutes();return m<300?m+1440:m}
+const clampT=m=>Math.max(720,Math.min(1560,m));
+let lang='en',T=clampT(nowMin()),mode='all',minRank=2,cats=new Set(),shelter='any',
     view='list',sel=null,openKey=null,query='',onlyOpen=false,onlyRare=false;
 let plan=[];   /* [{i:sessionId, at:planned arrival in minutes}] */
 try{
@@ -1022,6 +1030,9 @@ function drawTimeline(){
     const x=Math.max(0,v.arrive-T0),w=Math.max(4,Math.min(v.depart,T1)-Math.max(v.arrive,T0));
     if(v.arrive-T0>840)return;
     s+=`<rect x="${x}" y="${BASE+11}" width="${w}" height="5" rx="2.5" fill="var(--primary)"/>`});
+  const nx=clampT(nowMin())-T0;      /* where the evening actually is */
+  if(nx>=0&&nx<=840)
+    s+=`<line x1="${nx}" y1="0" x2="${nx}" y2="${H}" stroke="var(--primary)" stroke-width="1.5" stroke-dasharray="2 3"/>`;
   const tx=Math.max(0,Math.min(840,T-T0));
   s+=`<line x1="${tx}" y1="0" x2="${tx}" y2="${H}" stroke="var(--on-surface)" stroke-width="2"/>`;
   s+=`<circle cx="${tx}" cy="5" r="5" fill="var(--on-surface)"/>`;
@@ -1047,8 +1058,8 @@ $('#tlsvg').addEventListener('keydown',e=>{
   const step=e.shiftKey?60:15;
   if(e.key==='ArrowLeft'){setT(T-step);e.preventDefault()}
   if(e.key==='ArrowRight'){setT(T+step);e.preventDefault()}});
-let tlOpen=true;
-try{tlOpen=localStorage.getItem('ty26tl')!=='0'}catch(e){}
+let tlOpen=false;                 /* starts as a pill, so the list gets the screen */
+try{const v=localStorage.getItem('ty26tl');if(v!==null)tlOpen=v==='1'}catch(e){}
 function setTimeline(open){
   tlOpen=open;
   $('#timeline').dataset.collapsed=open?'0':'1';
@@ -1059,6 +1070,7 @@ function setTimeline(open){
   if(open)drawTimeline();
 }
 $('#tlToggle').onclick=()=>setTimeline(!tlOpen);
+$('#clock').onclick=()=>setT(clampT(nowMin()));
 $('#tPrev').onclick=()=>setT(T-15);
 $('#tNext').onclick=()=>setT(T+15);
 function setT(m){T=Math.max(T0,Math.min(T1,m));if(view==='detail'){view='list';sel=null}render()}
@@ -1272,6 +1284,8 @@ function measureChrome(){
 }
 function render(){
   $('#clock').textContent=fmt(T);
+  $('#clock').dataset.off=Math.abs(T-clampT(nowMin()))>=10?'1':'0';
+  $('#clock').title=t('nowLbl');
   const w=wxAt(T),onNow=EV.filter(e=>e.s<=T&&e.e>T);
   $('#tlSub').innerHTML=t('onCount',{a:onNow.length,b:onNow.filter(e=>e.r>=2).length})+
     ` · ${w[1]}°C · ${w[2]}%`+(T>=SUNSET?' · '+t('afterSunset'):'');

@@ -13,7 +13,9 @@ from this one to that one in time*.
 
 ## What it does
 
-- **Timeline scrubber.** Drag it and the map and list follow. The band behind it
+- **Timeline scrubber.** It opens on the time it actually is, docked as a pill in
+  the corner; tap it to expand the full track, tap the clock to snap back to now.
+  Drag it and the map and list follow. The band behind it
   is the hourly rain probability, the shaded half is after sunset (21:00), the
   filled area is how many events are running, and the magenta dots are the seven
   things that only exist tonight. Collapses to a pill when you want the screen back.
