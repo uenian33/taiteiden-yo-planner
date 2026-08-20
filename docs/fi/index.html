@@ -692,6 +692,7 @@ const STR={
 en:{code:'EN',name:'English',
  myPlan:'My plan', when:'When', onNow:'On now', soon:'Starting soon', all:'Rest of the night',
  startsIn:'in {n} min', ended:'ended',
+ scrubbed:'Showing what is on at this minute',
  whenNowSub:'Only what is running at this minute.',
  whenSoonSub:'What opens its doors within the next 45 minutes.',
  whenAllSub:'Everything that has not finished yet. Drag the timeline and the evening shortens.',
@@ -746,6 +747,7 @@ en:{code:'EN',name:'English',
 fi:{code:'FI',name:'Suomi',
  myPlan:'Oma ilta', when:'Milloin', onNow:'Nyt käynnissä', soon:'Alkaa pian', all:'Loppuilta',
  startsIn:'{n} min päästä', ended:'ohi',
+ scrubbed:'Näytetään mitä on käynnissä tällä minuutilla',
  whenNowSub:'Vain se mikä on juuri nyt käynnissä.',
  whenSoonSub:'Se mikä avaa ovensa seuraavan 45 minuutin sisällä.',
  whenAllSub:'Kaikki mikä ei ole vielä loppunut. Vedä aikajanaa, niin ilta lyhenee.',
@@ -800,6 +802,7 @@ fi:{code:'FI',name:'Suomi',
 zh:{code:'中',name:'中文',
  myPlan:'我的计划', when:'时间', onNow:'此刻在进行', soon:'即将开演', all:'今晚剩下的',
  startsIn:'{n} 分钟后', ended:'已结束',
+ scrubbed:'已切到「此刻在进行」',
  whenNowSub:'只看此刻正在进行的。',
  whenSoonSub:'接下来 45 分钟内开演的。',
  whenAllSub:'所有还没结束的。拖动时间轴，这一晚就跟着变短。',
@@ -1199,6 +1202,7 @@ function drawTimeline(){
 }
 let scrubbing=false;
 function scrubFrom(x){
+  if(mode==='all'){mode='now';syncPills();toast(t('scrubbed'))}
   const r=$('#tlTrack').getBoundingClientRect();
   setT(T0+Math.round(((x-r.left)/r.width)*840/5)*5);
 }

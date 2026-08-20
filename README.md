@@ -19,9 +19,10 @@ from this one to that one in time*.
   is the hourly rain probability, the shaded half is after sunset (21:00), the
   filled area is how many events are running, and the magenta dots are the seven
   things that only exist tonight. Collapses to a pill when you want the screen back.
-  All three time modes read it — *On now* is what is running, *Starting soon* is
-  the next 45 minutes, and *Rest of the night* is everything that has not finished
-  yet, so dragging the slider shortens the evening rather than doing nothing.
+  Dragging it narrows the list to that minute: the three time modes are *On now*,
+  *Starting soon* (the next 45 minutes) and *Rest of the night* (everything not
+  finished yet), and taking hold of the track is a statement about one minute, so
+  it switches to *On now* for you. Drag to 00:30 and four things are left.
 - **Ranks, not favourites.** Every session is R3 (unmissable — exists tonight only
   and nothing substitutes for it), R2 (strong enough to reroute around), R1 (good
   if you are passing) or unranked. Ranks drive the marker colour and size, and each
