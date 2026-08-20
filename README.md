@@ -41,6 +41,30 @@ from this one to that one in time*.
   tonight's rain probability, cancelled, and which sitting of a repeated piece
   this is.
 
+## Sharing a link in a particular language
+
+The link says which language it opens in, so you can hand a Finnish friend the
+Finnish one without telling them to go and change a setting.
+
+| Link | Opens in |
+|---|---|
+| `…/taiteiden-yo-planner/` | your browser's language, if it is one of the three |
+| `…/taiteiden-yo-planner/en/` | English |
+| `…/taiteiden-yo-planner/fi/` | Finnish |
+| `…/taiteiden-yo-planner/zh/` or `…/ch/` | Chinese |
+| `…/taiteiden-yo-planner/?lang=fi` | the same thing as a query, if you prefer |
+
+A language in the link beats anything the reader chose before, so a shared link
+always opens the way you sent it. Switching language in the app moves the URL
+with it — a link that says `/zh/` never shows Finnish. The language directories
+are real copies rather than redirects, because the point of the feature is the
+link you hand somebody and a redirect rewrites that link on the way through.
+
+**Sharing a whole evening.** The share button in My plan copies a link carrying
+the route: `…/zh/?plan=37917_1145,39427_1340` — each stop as session id and
+arrival time. Opening it shows that evening without touching the reader's own
+saved plan; the first edit they make is what adopts it.
+
 ## Design
 
 The interface is built in **Festarri's** design language — its M3 token set, its

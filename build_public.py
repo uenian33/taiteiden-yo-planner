@@ -1,15 +1,24 @@
 #!/usr/bin/env python3
-"""Build the public copy of the planner from index.html.
+"""Build the published copy of the planner from index.html.
+
+Two things happen here.
 
 The local build carries the full programme text so it works offline on a phone.
 The published copy keeps only a short excerpt of each official description and
 sends the reader to the festival's own page for the rest, so this site is a
 finding aid rather than a mirror of somebody else's copy.
+
+And the published copy is written once per language directory, so a link can
+name the language it should open in — /en/, /fi/, /zh/ and /ch/ as an alias for
+/zh/. These are real copies rather than redirects: the point of the feature is
+the link you hand somebody, and a redirect rewrites that link into a query
+string on the way through.
 """
 import json, os, re, sys
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 EXCERPT = 300
+LANG_DIRS = {'en': 'en', 'fi': 'fi', 'zh': 'zh', 'ch': 'zh'}
 
 
 def trim(text):
@@ -27,16 +36,27 @@ def main():
     m = re.search(r'^const EV=(\[.*\]);$', src, re.M)
     if not m:
         sys.exit('could not find the programme data in index.html')
+
     events = json.loads(m.group(1))
     for e in events:
         e['d'] = trim(e.get('d'))
         e['df'] = trim(e.get('df'))
-    out = src[:m.start(1)] + json.dumps(events, ensure_ascii=False,
-                                        separators=(',', ':')) + src[m.end(1):]
-    os.makedirs(os.path.join(ROOT, 'docs'), exist_ok=True)
-    dest = os.path.join(ROOT, 'docs', 'index.html')
-    open(dest, 'w').write(out)
-    print(f'{len(events)} sessions · {os.path.getsize(dest)/1024:.0f} KB → docs/index.html')
+    page = src[:m.start(1)] + json.dumps(events, ensure_ascii=False,
+                                         separators=(',', ':')) + src[m.end(1):]
+
+    docs = os.path.join(ROOT, 'docs')
+    os.makedirs(docs, exist_ok=True)
+    written = []
+    for path, html in [(os.path.join(docs, 'index.html'), page)] + [
+            (os.path.join(docs, d, 'index.html'), page) for d in LANG_DIRS]:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        open(path, 'w').write(html)
+        written.append(os.path.relpath(path, ROOT))
+
+    kb = os.path.getsize(os.path.join(docs, 'index.html')) / 1024
+    print(f'{len(events)} sessions · {kb:.0f} KB each')
+    for w in written:
+        print(f'  {w}')
 
 
 if __name__ == '__main__':

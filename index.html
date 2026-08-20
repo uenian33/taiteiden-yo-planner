@@ -585,6 +585,7 @@ img{display:block;max-width:100%}
   <symbol id="i-lang" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5h8M8 3.5v2M9.6 5.5c-.6 3.6-2.6 6.4-5.6 8M6.4 9.4c1.2 2 3 3.4 5.1 4.2M12.2 20.5l3.6-9 3.6 9M13.6 17.6h4.4"/></symbol>
   <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></symbol>
   <symbol id="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15.5V4M8 7.5L12 3.5l4 4M5.5 13v6.5h13V13"/></symbol>
   <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 6.5h15M9.5 6.5V4.5h5v2M6.5 6.5l1 13h9l1-13"/></symbol>
 </svg>
 
@@ -599,6 +600,7 @@ img{display:block;max-width:100%}
       <div class="sheet-head">
         <button class="circle-btn" id="backBtn" hidden><svg><use href="#i-back"/></svg></button>
         <span class="ht"><b id="sheetTitle">On now</b><span id="sheetSub"></span></span>
+        <button class="circle-btn" id="sharePlan" hidden><svg><use href="#i-share"/></svg></button>
         <button class="circle-btn" id="clearPlan" hidden><svg><use href="#i-trash"/></svg></button>
       </div>
       <div class="searchbar" id="searchbar" hidden>
@@ -711,6 +713,7 @@ en:{code:'EN',name:'English',
  reset:'Reset', done:'Done', language:'Language', theme:'Theme',
  timeline:'Timeline', collapse:'Collapse the timeline', expand:'Open the timeline',
  nowLbl:'Jump to the time it is now',
+ shareLink:'Copy a link in this language', sharePlan:'Copy a link to this plan', copied:'Link copied',
  openShort:'Normally closed', openDoors:'Doors that are normally shut',
  openDoorsSub:'This place is not usually open to the public, or not at this hour. Tonight it is.',
  rareShort:'Seldom seen', rareLong:'You will not get this again soon',
@@ -758,6 +761,7 @@ fi:{code:'FI',name:'Suomi',
  reset:'Tyhjennä', done:'Valmis', language:'Kieli', theme:'Teema',
  timeline:'Aikajana', collapse:'Pienennä aikajana', expand:'Avaa aikajana',
  nowLbl:'Hyppää nykyhetkeen',
+ shareLink:'Kopioi linkki tällä kielellä', sharePlan:'Kopioi linkki tähän iltaan', copied:'Linkki kopioitu',
  openShort:'Normaalisti kiinni', openDoors:'Ovet jotka ovat yleensä kiinni',
  openDoorsSub:'Tämä paikka ei ole tavallisesti yleisölle auki, tai ei tähän aikaan. Tänä iltana on.',
  rareShort:'Harvoin nähty', rareLong:'Tätä ei näe hetkeen uudelleen',
@@ -805,6 +809,7 @@ zh:{code:'中',name:'中文',
  reset:'重置', done:'完成', language:'语言', theme:'主题',
  timeline:'时间轴', collapse:'收起时间轴', expand:'展开时间轴',
  nowLbl:'跳到当前时刻',
+ shareLink:'复制这个语言版本的链接', sharePlan:'复制这条路线的链接', copied:'链接已复制',
  openShort:'平时不开放', openDoors:'平时不开的门',
  openDoorsSub:'这个地方平时不对公众开放，或者不在这个时段开放。今晚开。',
  rareShort:'难得一见', rareLong:'错过要等很久',
@@ -879,19 +884,93 @@ const bloomHero=open=>open
 const wxAt=m=>WX.find(w=>w[0]===Math.min(26,Math.max(12,Math.floor(m/60))))||WX[0];
 
 let justToggled=null;
+/* The address bar is the share format. A link can name its language as a path
+   (…/zh/, …/ch/, …/fi/) or as ?lang=, and can carry a whole plan as
+   ?plan=<session>_<arrival>,… so a route can be handed to somebody. */
+const LANG_ALIAS={en:'en',eng:'en',english:'en',
+                  fi:'fi',fin:'fi',suomi:'fi',
+                  zh:'zh',ch:'zh',cn:'zh',chinese:'zh','zh-cn':'zh','zh-hans':'zh','zh-hant':'zh'};
+function langFromURL(){
+  const q=new URLSearchParams(location.search).get('lang');
+  if(q&&LANG_ALIAS[q.toLowerCase()])return LANG_ALIAS[q.toLowerCase()];
+  const seg=location.pathname.split('/').filter(Boolean).pop();
+  if(seg&&LANG_ALIAS[seg.toLowerCase()])return LANG_ALIAS[seg.toLowerCase()];
+  return null;
+}
+function langFromBrowser(){
+  for(const l of (navigator.languages||[navigator.language||''])){
+    const k=String(l).toLowerCase();
+    if(LANG_ALIAS[k])return LANG_ALIAS[k];
+    const base=k.split('-')[0];
+    if(LANG_ALIAS[base])return LANG_ALIAS[base];
+  }
+  return null;
+}
+function planFromURL(){
+  const q=new URLSearchParams(location.search).get('plan');
+  if(!q)return null;
+  const out=q.split(',').map(pair=>{
+    const [i,at]=pair.split('_');
+    return {i,at:parseInt(at,10)};
+  }).filter(p=>p.i&&!isNaN(p.at));
+  return out.length?out:null;
+}
+const planParam=()=>plan.map(p=>p.i+'_'+p.at).join(',');
+function shareURL(withPlan){
+  const u=new URL(location.href);
+  u.search='';u.hash='';
+  /* a language directory already says the language, so do not say it twice */
+  const seg=u.pathname.split('/').filter(Boolean).pop();
+  if(!(seg&&LANG_ALIAS[seg.toLowerCase()]))u.searchParams.set('lang',lang);
+  if(withPlan&&plan.length)u.searchParams.set('plan',planParam());
+  return u.toString();
+}
+/* Keeps the address bar honest about the language, and leaves any ?plan that
+   arrived in the link alone — a plan only enters a URL when somebody presses
+   share, never because they happened to save something. */
+function syncURL(){
+  const u=new URL(location.href);
+  const parts=u.pathname.split('/');
+  const last=parts[parts.length-1]===''?parts.length-2:parts.length-1;
+  const seg=(parts[last]||'').toLowerCase();
+  if(seg&&LANG_ALIAS[seg]){
+    if(LANG_ALIAS[seg]!==lang){parts[last]=lang;u.pathname=parts.join('/')}
+    u.searchParams.delete('lang');
+  }else{
+    u.searchParams.set('lang',lang);
+  }
+  history.replaceState(null,'',u.toString());
+}
+async function copyLink(withPlan){
+  const url=shareURL(withPlan);
+  try{await navigator.clipboard.writeText(url)}
+  catch(e){
+    const ta=document.createElement('textarea');
+    ta.value=url;ta.style.cssText='position:fixed;opacity:0';
+    document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy')}catch(_){}
+    ta.remove();
+  }
+  toast(t('copied'));
+}
 /* Hours after midnight belong to the same evening, so 01:30 is 25:30. */
 function nowMin(){const d=new Date();const m=d.getHours()*60+d.getMinutes();return m<300?m+1440:m}
 const clampT=m=>Math.max(720,Math.min(1560,m));
 let lang='en',T=clampT(nowMin()),mode='all',minRank=2,cats=new Set(),shelter='any',
     view='list',sel=null,openKey=null,query='',onlyOpen=false,onlyRare=false;
 let plan=[];   /* [{i:sessionId, at:planned arrival in minutes}] */
+const urlPlan=planFromURL();
 try{
-  const raw=JSON.parse(localStorage.getItem('ty26plan')||'[]');
+  const raw=urlPlan||JSON.parse(localStorage.getItem('ty26plan')||'[]');
   plan=raw.map(v=>typeof v==='string'?{i:v,at:(byId[v]||{}).s}:v)
           .filter(p=>p&&byId[p.i]).map(p=>({i:p.i,at:+p.at||byId[p.i].s}));
 }catch(e){plan=[]}
-try{const L=localStorage.getItem('ty26lang');if(STR[L])lang=L}catch(e){}
-const savePlan=()=>{try{localStorage.setItem('ty26plan',JSON.stringify(plan))}catch(e){}};
+lang=langFromURL()||(()=>{try{const L=localStorage.getItem('ty26lang');if(STR[L])return L}catch(e){}return null})()
+     ||langFromBrowser()||'en';
+const savePlan=()=>{
+  try{localStorage.setItem('ty26plan',JSON.stringify(plan))}catch(e){}
+  if(typeof syncURL==='function')syncURL();
+};
 
 /* copy helper: t('count',{a:3,b:9}) */
 function t(key,vars){
@@ -1204,11 +1283,12 @@ function buildPlan(){
   return stops;
 }
 function renderPlan(){
-  plan=plan.filter(p=>byId[p.i]).sort((a,b)=>a.at-b.at);savePlan();
+  plan=plan.filter(p=>byId[p.i]).sort((a,b)=>a.at-b.at);
   const items=buildPlan();
   $('#sheetTitle').textContent=t('myPlan');
   $('#sheetSub').textContent=items.length?t('stops',{n:items.length}):t('nothingSaved');
   $('#backBtn').hidden=false;$('#clearPlan').hidden=!items.length;
+  $('#sharePlan').hidden=!items.length;
   let body=`<div class="group-h" style="${rv(3)}"><i></i><b>${t('routes')}</b><span>${t('routesSub')}</span></div>
     <div class="presets">`+PRESETS.map((p,k)=>{
       const c=p[lang]||p.en;
@@ -1354,10 +1434,11 @@ function applyLang(){
   $('#searchBtn').setAttribute('aria-label',t('search'));
   $('#searchInput').placeholder=t('searchPh');
   $('.brand').title=t('brandNote');
+  $('#sharePlan').title=t('sharePlan');
   $('#clearSheet').textContent=t('reset');
   $('#applyBtn').textContent=t('done');
   $('#tlToggle').setAttribute('aria-label',tlOpen?t('collapse'):t('expand'));
-  syncPills();relabelMarkers();
+  syncPills();relabelMarkers();syncURL();
   try{localStorage.setItem('ty26lang',lang)}catch(e){}
 }
 document.addEventListener('click',ev=>{
@@ -1365,6 +1446,8 @@ document.addEventListener('click',ev=>{
   if(fav){ev.preventDefault();ev.stopPropagation();
     if(!plan.some(p=>p.i===fav.dataset.fav))favBurst(fav);
     toggleFav(fav.dataset.fav);return}
+  const sh=ev.target.closest('[data-share]');
+  if(sh){ev.preventDefault();copyLink(sh.dataset.share==='plan');return}
   const at=ev.target.closest('[data-at]');
   if(at){
     ev.stopPropagation();
@@ -1403,6 +1486,8 @@ function loadPreset(k){
   toast(t('loaded',{n:(p[lang]||p.en).n}));
 }
 $('#clearPlan').onclick=()=>{plan=[];savePlan();render();toast(t('cleared'))};
+$('#sharePlan').onclick=()=>copyLink(true);
+$('#sharePlan').title=t('sharePlan');
 /* ---- the blast ----
    burstParts and favBurst are Festarri's, function for function. The palette
    is read off the pressed control rather than written down, so a magenta R3
@@ -1516,7 +1601,9 @@ const FILTERS={
     <h3>${t('theme')}</h3><div class="wrap">${
     [['light','light'],['dark','dark']].map(([v,k])=>
       `<button class="opt" data-theme="${v}" aria-pressed="${(isDark()?'dark':'light')===v}">
-        <span class="ck"><svg><use href="#i-check"/></svg></span>${t(k)}</button>`).join('')}</div>`}
+        <span class="ck"><svg><use href="#i-check"/></svg></span>${t(k)}</button>`).join('')}</div>
+    <h3>${t('shareLink')}</h3>
+    <button class="opt" data-share="lang"><svg><use href="#i-share"/></svg>${shareURL(false).replace(/^https?:\/\//,'')}</button>`}
 };
 function openSheet(k){
   openKey=k;$('#fTitle').textContent=FILTERS[k].title();
@@ -1617,6 +1704,7 @@ window.addEventListener('resize',()=>{measureChrome();setSnap(snapIdx)});
 
 /* ---------------- boot ---------------- */
 try{const th=localStorage.getItem('ty26theme');if(th)document.documentElement.setAttribute('data-theme',th)}catch(e){}
+if(urlPlan)view='plan';   /* look at it; the first edit is what adopts it */
 applyBase();applyLang();setTimeline(tlOpen,false);setSnap(1,false);render();
 map.whenReady(()=>setTimeout(()=>{map.invalidateSize();syncMarkers()},80));
 map.on('zoomend',syncMarkers);
