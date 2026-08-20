@@ -26,10 +26,32 @@ from this one to that one in time*.
   out the walk between them. It distinguishes a fixed performance (it ends when it
   ends) from an open-all-evening venue (elastic — you stay until you have to leave),
   and warns when a stop no longer fits. Four ready-made routes are included.
-- **Search** across event name, venue, street and description, in either language.
+- **Two labels the flat programme hides.** *Normally closed* marks a door that is
+  not usually open to the public, or not at this hour — the National Library's
+  Cupola Hall, the clock tower at Central Station, an oil silo in Laajasalo.
+  *Seldom seen* marks a one-off: a touring company passing through, a premiere, a
+  piece performed tonight and then not again. Both are filters as well as labels.
+- **Search** across event name, venue, street and description, in any language.
+- **Three languages.** English, Finnish and Chinese, including the editorial notes.
+  Event titles and descriptions come from the festival in Finnish and English;
+  the Chinese build shows the English text with Chinese chrome and notes.
 - **Practical flags** per event: booking required, limited seating, outdoors with
   tonight's rain probability, cancelled, and which sitting of a repeated piece
   this is.
+
+## Design
+
+The interface is built in **Festarri's** design language — its M3 token set, its
+Roboto Flex type ramp, its light "canvas" and dark "art night" palettes, and its
+bloom icon family. That family is normative in Festarri: no star, no heart and no
+chevron-back anywhere, so a saved event wears the six-petal mark itself, a rank-3
+pin is a single petal, and going back is the two-petal cut. Adding something to
+your plan opens the bloom petal by petal — the staggered version is reserved for
+the detail panel, because six staggered animations on every row of a list is the
+thing that rule exists to prevent.
+
+The one colour that is not Festarri's is the rank-3 magenta, which is the colour
+of the giraffes.
 
 ## Data
 
@@ -45,6 +67,10 @@ from this one to that one in time*.
 The published copy quotes only a short excerpt of each official description and
 links to the festival's page for the rest; `build_public.py` produces it from the
 local build.
+
+This is an **unofficial** planner and is not affiliated with the festival. The
+Taiteiden yö mark identifies which festival the programme belongs to; the Festarri
+mark identifies whose design language the interface is built in.
 
 The **ranks and the notes are editorial** — one person's opinion about one evening,
 not the organisers'. Times and venues come from the official listing; check it
