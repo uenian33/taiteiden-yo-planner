@@ -50,7 +50,10 @@ chevron-back anywhere, so a saved event wears the six-petal mark itself, a rank-
 pin is a single petal, and going back is the two-petal cut. Adding something to
 your plan opens the bloom petal by petal — the staggered version is reserved for
 the detail panel, because six staggered animations on every row of a list is the
-thing that rule exists to prevent.
+thing that rule exists to prevent — and throws Festarri's favourite blast, ported
+function for function: two rings, then waves of streaks, sparks and petals, in
+the colours of whatever you just pressed. The timeline dock grows out of its own
+pill rather than appearing, measured before and after and animated between.
 
 The one colour that is not Festarri's is the rank-3 magenta, which is the colour
 of the giraffes.

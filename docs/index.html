@@ -219,13 +219,36 @@ img{display:block;max-width:100%}
 .bi--bloom>g:nth-child(6){animation-delay:200ms}
 .bi--bloom>circle{animation:bi-centre-in var(--dur-med2) var(--ease-emph-decel) 260ms both}
 
+/* The favourite blast, ported keyframe for keyframe from Festarri's own
+   (scripts/home.html): two rings, then waves of streaks, sparks and petals
+   thrown out of the pressed control into a fixed layer, so nothing clips
+   them and nothing reflows. Putting an event in your plan here is the same
+   act as starring a festival there, so it is the same blast. */
+@keyframes fp-fav-ring{
+  0%{transform:scale(.2);opacity:0;border-width:12px}
+  10%{opacity:.85}
+  100%{transform:scale(2.9);opacity:0;border-width:1px}}
+@keyframes fp-fav-spark{
+  0%{transform:rotate(var(--a)) translateX(calc(var(--fs) * .1)) scale(.35);opacity:0}
+  12%{opacity:1}72%{opacity:1}
+  100%{transform:rotate(var(--a)) translateX(calc(var(--fs) * var(--d))) scale(.12);opacity:0}}
+@keyframes fp-fav-petal{
+  0%{transform:rotate(var(--a)) translateX(calc(var(--fs) * .1)) scale(.2) rotate(0deg);opacity:0}
+  14%{opacity:1}70%{opacity:1}
+  100%{transform:rotate(var(--a)) translateX(calc(var(--fs) * var(--d))) scale(1) rotate(300deg);opacity:0}}
+.fp-blast{position:fixed;z-index:940;width:40px;height:40px;pointer-events:none}
+.fp-blast i{display:block}
+
 /* ============================================================
    TIMELINE — fixed height, three fixed rows. Nothing here wraps.
    ============================================================ */
 .timeline{position:absolute;z-index:520;left:0;right:0;bottom:0;
-  background:var(--glass);backdrop-filter:blur(16px);
-  border-top:1px solid var(--outline-variant);
-  padding:6px 14px calc(6px + env(safe-area-inset-bottom))}
+  display:flex;justify-content:flex-end;pointer-events:none;
+  padding:0 12px calc(12px + env(safe-area-inset-bottom))}
+.tl-inner{pointer-events:auto;width:100%;overflow:hidden;
+  background:var(--glass);backdrop-filter:blur(16px);box-shadow:var(--elev-2);
+  border:1px solid var(--outline-variant);border-radius:var(--corner-xl);
+  padding:6px 14px 8px}
 .tl-head{display:flex;align-items:center;gap:10px;height:34px}
 .tl-clock{flex:0 0 auto;border:0;background:none;padding:0 2px;cursor:pointer;
   color:inherit;font:700 24px/26px var(--mono);letter-spacing:-1.2px}
@@ -244,11 +267,9 @@ img{display:block;max-width:100%}
   color:var(--on-surface-variant);font:500 10px/14px var(--mono)}
 #tlToggle svg{transition:transform var(--dur-med2) var(--ease-emphasized)}
 #tlToggle[aria-expanded="false"] svg{transform:rotate(180deg)}
-/* collapsed: the dock becomes a pill that still scrubs, and gives the list its space back */
-.timeline[data-collapsed="1"]{
-  left:auto;right:12px;width:auto;bottom:calc(12px + env(safe-area-inset-bottom));
-  border:1px solid var(--outline-variant);border-radius:var(--corner-full);
-  padding:5px 7px 5px 15px;box-shadow:var(--elev-2)}
+/* collapsed: the card shrinks to a pill that still scrubs, and gives the list its space back */
+.timeline[data-collapsed="1"] .tl-inner{width:auto;border-radius:var(--corner-full);
+  padding:5px 7px 5px 15px}
 .timeline[data-collapsed="1"] .tl-sub,
 .timeline[data-collapsed="1"] .tl-track,
 .timeline[data-collapsed="1"] .tl-ticks{display:none}
@@ -502,8 +523,7 @@ img{display:block;max-width:100%}
   .handle{display:none}
   .sbody{overflow-y:auto !important;padding-bottom:24px}
   .dhero{margin-left:-14px;margin-right:-14px}
-  .timeline{left:auto;width:calc(100% - 436px)}
-  .timeline[data-collapsed="1"]{left:auto;right:24px;width:auto}
+  .timeline{left:auto;width:calc(100% - 436px);padding:0 24px 24px}
   .snack{left:auto;right:24px;width:340px;bottom:calc(var(--tl-h) + 24px)}
   .fsheet{left:auto;right:24px;bottom:calc(var(--tl-h) + 24px);width:410px;
     border-radius:var(--corner-xl);max-height:66%}
@@ -614,6 +634,7 @@ img{display:block;max-width:100%}
     </div>
 
     <div class="timeline" id="timeline" data-collapsed="0">
+      <div class="tl-inner" id="tlInner">
       <div class="tl-head">
         <button class="tl-clock" id="clock" data-off="0">19:00</button>
         <span class="tl-sub" id="tlSub"></span>
@@ -628,6 +649,7 @@ img{display:block;max-width:100%}
              aria-label="Time of evening" aria-valuemin="720" aria-valuemax="1560" aria-valuenow="1140" tabindex="0"></svg>
       </div>
       <div class="tl-ticks" id="tlTicks"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -1060,14 +1082,28 @@ $('#tlsvg').addEventListener('keydown',e=>{
   if(e.key==='ArrowRight'){setT(T+step);e.preventDefault()}});
 let tlOpen=false;                 /* starts as a pill, so the list gets the screen */
 try{const v=localStorage.getItem('ty26tl');if(v!==null)tlOpen=v==='1'}catch(e){}
-function setTimeline(open){
+/* The dock grows out of its own pill rather than appearing: the card's box is
+   measured before and after the state flips and animated between the two, and
+   overflow:hidden lets the track be revealed instead of popped in. */
+function setTimeline(open,animate=true){
+  const card=$('#tlInner'),before=card.getBoundingClientRect();
+  const r0=getComputedStyle(card).borderRadius;
   tlOpen=open;
   $('#timeline').dataset.collapsed=open?'0':'1';
   $('#tlToggle').setAttribute('aria-expanded',open);
   $('#tlToggle').setAttribute('aria-label',open?t('collapse'):t('expand'));
   try{localStorage.setItem('ty26tl',open?'1':'0')}catch(e){}
-  measureChrome();setSnap(snapIdx);
   if(open)drawTimeline();
+  measureChrome();setSnap(snapIdx);
+  if(!animate||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  const after=card.getBoundingClientRect(),r1=getComputedStyle(card).borderRadius;
+  card.animate(
+    [{width:before.width+'px',height:before.height+'px',borderRadius:r0},
+     {width:after.width+'px',height:after.height+'px',borderRadius:r1}],
+    {duration:420,easing:'cubic-bezier(.05,.7,.1,1)'});
+  if(open)[['.tl-sub',110],['.tl-track',150],['.tl-ticks',200]].forEach(([sel,d])=>{
+    const el=$(sel);if(el)el.animate([{opacity:0,transform:'translateY(6px)'},{opacity:1,transform:'none'}],
+      {duration:260,delay:d,fill:'backwards',easing:'cubic-bezier(.05,.7,.1,1)'})});
 }
 $('#tlToggle').onclick=()=>setTimeline(!tlOpen);
 $('#clock').onclick=()=>setT(clampT(nowMin()));
@@ -1272,7 +1308,9 @@ function openDetail(id,fromMap){
   rm.onclick=()=>{const o=!d.classList.contains('open');
     d.classList.toggle('open',o);rm.setAttribute('aria-expanded',o);
     $('span',rm).textContent=o?t('readLess'):t('readMore')};
-  $('#dFav').onclick=()=>{toggleFav(id);openDetail(id,true)};
+  $('#dFav').onclick=ev=>{
+    if(!plan.some(x=>x.i===id))favBurst(ev.currentTarget);
+    toggleFav(id);openDetail(id,true)};
   if(!fromMap)focusOn(e);
   if(snapIdx===0)setSnap(1);
   syncMarkers();drawTimeline();
@@ -1320,7 +1358,9 @@ function applyLang(){
 }
 document.addEventListener('click',ev=>{
   const fav=ev.target.closest('[data-fav]');
-  if(fav){ev.preventDefault();ev.stopPropagation();toggleFav(fav.dataset.fav);return}
+  if(fav){ev.preventDefault();ev.stopPropagation();
+    if(!plan.some(p=>p.i===fav.dataset.fav))favBurst(fav);
+    toggleFav(fav.dataset.fav);return}
   const at=ev.target.closest('[data-at]');
   if(at){
     ev.stopPropagation();
@@ -1359,6 +1399,62 @@ function loadPreset(k){
   toast(t('loaded',{n:(p[lang]||p.en).n}));
 }
 $('#clearPlan').onclick=()=>{plan=[];savePlan();render();toast(t('cleared'))};
+/* ---- the blast ----
+   burstParts and favBurst are Festarri's, function for function. The palette
+   is read off the pressed control rather than written down, so a magenta R3
+   throws magenta and a green "normally closed" throws green. */
+function burstParts(pal){
+  const rnd=(a,b)=>a+Math.random()*(b-a),parts=[];
+  [[0,560],[90,620]].forEach(pair=>parts.push({
+    position:'absolute',width:'100%',height:'100%',borderRadius:'50%',
+    border:'3px solid currentColor',opacity:0,willChange:'transform, opacity',
+    animation:`fp-fav-ring ${pair[1]}ms cubic-bezier(.12,.78,.26,1) ${pair[0]}ms forwards`}));
+  const wave=(count,o)=>{
+    const spread=360/count;
+    for(let i=0;i<count;i++){
+      const sz=rnd(o.size[0],o.size[1]);
+      const st={position:'absolute',opacity:0,willChange:'transform, opacity',
+        '--a':((o.offset||0)+spread*i+rnd(-spread/4,spread/4)).toFixed(1)+'deg',
+        '--d':rnd(o.dist[0],o.dist[1]).toFixed(3),'--fs':'40px',
+        width:'calc(40px * '+sz.toFixed(4)+(o.kind==='streak'?' * 3.4':'')+')',
+        height:'calc(40px * '+sz.toFixed(4)+')',
+        borderRadius:'999px',
+        background:pal[Math.floor(rnd(0,pal.length))],
+        animation:`fp-fav-${o.kind==='petal'?'petal':'spark'} ${o.dur}ms `+
+          `cubic-bezier(.08,.72,.2,1) ${(o.delay+rnd(0,70)).toFixed(0)}ms forwards`};
+      /* A lobe with one corner brought to a point: the mark's own petal at
+         confetti size. The box already travels along its line, so the point
+         is the trailing corner and the petals fly tip-last. */
+      if(o.kind==='petal')st.borderRadius='50% 50% 50% 0';
+      parts.push(st);
+    }
+  };
+  wave(14,{dist:[1.15,1.75],size:[.045,.07],delay:0,dur:640,kind:'streak'});
+  wave(10,{dist:[.75,1.15],size:[.04,.065],delay:70,dur:580,offset:14});
+  wave(6,{dist:[.95,1.45],size:[.10,.16],delay:130,dur:760,offset:28,kind:'petal'});
+  return parts;
+}
+function favBurst(host){
+  if(!host)return;
+  const rect=host.getBoundingClientRect();
+  if(!rect.width)return;
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  const cs=getComputedStyle(host);
+  const pal=['--rk-ink','--cat-ink','--primary','--cat-bg','--rk-ink']
+    .map(v=>cs.getPropertyValue(v).trim()).filter(Boolean);
+  const layer=document.createElement('div');
+  layer.className='fp-blast';layer.setAttribute('aria-hidden','true');
+  layer.style.color=pal[0]||'currentColor';
+  layer.style.left=(rect.left+rect.width/2-20).toFixed(1)+'px';
+  layer.style.top=(rect.top+rect.height/2-20).toFixed(1)+'px';
+  burstParts(pal.length?pal:['#888']).forEach(st=>{
+    const el=document.createElement('i');
+    Object.keys(st).forEach(k=>{
+      if(k.charAt(0)==='-')el.style.setProperty(k,st[k]);else el.style[k]=st[k]});
+    layer.appendChild(el)});
+  document.body.appendChild(layer);
+  setTimeout(()=>layer.remove(),1300);
+}
 let toastT=null;
 function toast(msg){
   $('#snackText').textContent=msg;$('#snack').classList.add('show');
@@ -1517,7 +1613,7 @@ window.addEventListener('resize',()=>{measureChrome();setSnap(snapIdx)});
 
 /* ---------------- boot ---------------- */
 try{const th=localStorage.getItem('ty26theme');if(th)document.documentElement.setAttribute('data-theme',th)}catch(e){}
-applyBase();applyLang();setTimeline(tlOpen);setSnap(1,false);render();
+applyBase();applyLang();setTimeline(tlOpen,false);setSnap(1,false);render();
 map.whenReady(()=>setTimeout(()=>{map.invalidateSize();syncMarkers()},80));
 map.on('zoomend',syncMarkers);
 </script>
