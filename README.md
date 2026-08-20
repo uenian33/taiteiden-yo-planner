@@ -19,6 +19,9 @@ from this one to that one in time*.
   is the hourly rain probability, the shaded half is after sunset (21:00), the
   filled area is how many events are running, and the magenta dots are the seven
   things that only exist tonight. Collapses to a pill when you want the screen back.
+  All three time modes read it — *On now* is what is running, *Starting soon* is
+  the next 45 minutes, and *Rest of the night* is everything that has not finished
+  yet, so dragging the slider shortens the evening rather than doing nothing.
 - **Ranks, not favourites.** Every session is R3 (unmissable — exists tonight only
   and nothing substitutes for it), R2 (strong enough to reroute around), R1 (good
   if you are passing) or unranked. Ranks drive the marker colour and size, and each
@@ -60,8 +63,10 @@ with it — a link that says `/zh/` never shows Finnish. The language directorie
 are real copies rather than redirects, because the point of the feature is the
 link you hand somebody and a redirect rewrites that link on the way through.
 
-**Sharing a whole evening.** The share button in My plan copies a link carrying
-the route: `…/zh/?plan=37917_1145,39427_1340` — each stop as session id and
+**Sharing a whole evening.** *Send this evening to a friend*, at the foot of My
+plan, hands the route to the phone's own share sheet where there is one and to
+the clipboard where there is not — a readable list of stops plus a link carrying
+the route itself: `…/zh/?plan=37917_1145,39427_1340`, each stop as session id and
 arrival time. Opening it shows that evening without touching the reader's own
 saved plan; the first edit they make is what adopts it.
 

@@ -360,6 +360,7 @@ img{display:block;max-width:100%}
 .bdg.warn{background:var(--warn-bg);color:var(--warn-ink)}
 .bdg.rain{background:var(--c-dance-bg);color:var(--c-dance-ink)}
 .bdg.live{background:var(--r3-bg);color:var(--r3)}
+.bdg.soon{background:var(--r2-bg);color:var(--r2)}
 .bdg.gone{background:var(--surface-container-highest);color:var(--on-surface-variant)}
 .bdg.door{background:var(--c-part-bg);color:var(--c-part-ink)}
 .bdg.rare{background:var(--c-visual-bg);color:var(--c-visual-ink)}
@@ -459,6 +460,7 @@ img{display:block;max-width:100%}
   color:var(--on-surface-variant);font:500 12px/16px var(--font)}
 .leg svg{width:14px;height:14px;flex:0 0 14px}
 .leg.bad{color:var(--warn-ink)}
+.share-plan{width:100%;margin-top:18px;background:var(--rk-bg);color:var(--rk-ink)}
 .presets{display:flex;flex-direction:column;gap:8px}
 .preset{display:flex;gap:11px;align-items:flex-start;padding:12px;border:0;cursor:pointer;
   text-align:left;width:100%;background:var(--surface-container);border-radius:var(--corner-l);
@@ -676,7 +678,11 @@ img{display:block;max-width:100%}
    ============================================================ */
 const STR={
 en:{code:'EN',name:'English',
- myPlan:'My plan', when:'When', onNow:'On now', soon:'Starting soon', all:'All night',
+ myPlan:'My plan', when:'When', onNow:'On now', soon:'Starting soon', all:'Rest of the night',
+ startsIn:'in {n} min', ended:'ended',
+ whenNowSub:'Only what is running at this minute.',
+ whenSoonSub:'What opens its doors within the next 45 minutes.',
+ whenAllSub:'Everything that has not finished yet. Drag the timeline and the evening shortens.',
  rank:'Rank', type:'Type', shelter:'Shelter', map:'Map', satellite:'Satellite',
  rankPill:['The whole programme','Worth a detour','Top picks','Unmissable only'],
  rankGroup:['The rest of the programme','Worth it if you are passing','Strong picks','Unmissable tonight'],
@@ -713,7 +719,9 @@ en:{code:'EN',name:'English',
  reset:'Reset', done:'Done', language:'Language', theme:'Theme',
  timeline:'Timeline', collapse:'Collapse the timeline', expand:'Open the timeline',
  nowLbl:'Jump to the time it is now',
- shareLink:'Copy a link in this language', sharePlan:'Copy a link to this plan', copied:'Link copied',
+ shareLink:'Copy a link in this language', sharePlan:'Share this plan', copied:'Link copied',
+ sharePlanBtn:'Send this evening to a friend',
+ shareIntro:'My Night of the Arts, {n} stops:', shareOpens:'Opens in this planner, in any of its three languages.',
  openShort:'Normally closed', openDoors:'Doors that are normally shut',
  openDoorsSub:'This place is not usually open to the public, or not at this hour. Tonight it is.',
  rareShort:'Seldom seen', rareLong:'You will not get this again soon',
@@ -724,7 +732,11 @@ en:{code:'EN',name:'English',
  dark:'Dark', light:'Light', alsoCalled:'Also listed as'},
 
 fi:{code:'FI',name:'Suomi',
- myPlan:'Oma ilta', when:'Milloin', onNow:'Nyt käynnissä', soon:'Alkaa pian', all:'Koko ilta',
+ myPlan:'Oma ilta', when:'Milloin', onNow:'Nyt käynnissä', soon:'Alkaa pian', all:'Loppuilta',
+ startsIn:'{n} min päästä', ended:'ohi',
+ whenNowSub:'Vain se mikä on juuri nyt käynnissä.',
+ whenSoonSub:'Se mikä avaa ovensa seuraavan 45 minuutin sisällä.',
+ whenAllSub:'Kaikki mikä ei ole vielä loppunut. Vedä aikajanaa, niin ilta lyhenee.',
  rank:'Suositus', type:'Laji', shelter:'Sisä vai ulko', map:'Kartta', satellite:'Satelliitti',
  rankPill:['Koko ohjelma','Kannattaa jos osut','Parhaat valinnat','Vain pakolliset'],
  rankGroup:['Muu ohjelma','Kannattaa jos kuljet ohi','Vahvat valinnat','Illan pakolliset'],
@@ -761,7 +773,9 @@ fi:{code:'FI',name:'Suomi',
  reset:'Tyhjennä', done:'Valmis', language:'Kieli', theme:'Teema',
  timeline:'Aikajana', collapse:'Pienennä aikajana', expand:'Avaa aikajana',
  nowLbl:'Hyppää nykyhetkeen',
- shareLink:'Kopioi linkki tällä kielellä', sharePlan:'Kopioi linkki tähän iltaan', copied:'Linkki kopioitu',
+ shareLink:'Kopioi linkki tällä kielellä', sharePlan:'Jaa tämä ilta', copied:'Linkki kopioitu',
+ sharePlanBtn:'Lähetä tämä ilta kaverille',
+ shareIntro:'Minun Taiteiden yöni, {n} kohdetta:', shareOpens:'Aukeaa tässä suunnittelijassa, millä tahansa sen kolmesta kielestä.',
  openShort:'Normaalisti kiinni', openDoors:'Ovet jotka ovat yleensä kiinni',
  openDoorsSub:'Tämä paikka ei ole tavallisesti yleisölle auki, tai ei tähän aikaan. Tänä iltana on.',
  rareShort:'Harvoin nähty', rareLong:'Tätä ei näe hetkeen uudelleen',
@@ -772,7 +786,11 @@ fi:{code:'FI',name:'Suomi',
  dark:'Tumma', light:'Vaalea', alsoCalled:'Ohjelmassa myös nimellä'},
 
 zh:{code:'中',name:'中文',
- myPlan:'我的计划', when:'时间', onNow:'此刻在进行', soon:'即将开演', all:'整晚',
+ myPlan:'我的计划', when:'时间', onNow:'此刻在进行', soon:'即将开演', all:'今晚剩下的',
+ startsIn:'{n} 分钟后', ended:'已结束',
+ whenNowSub:'只看此刻正在进行的。',
+ whenSoonSub:'接下来 45 分钟内开演的。',
+ whenAllSub:'所有还没结束的。拖动时间轴，这一晚就跟着变短。',
  rank:'推荐等级', type:'类型', shelter:'室内外', map:'地图', satellite:'卫星',
  rankPill:['全部节目','顺路值得','重点推荐','只看必看'],
  rankGroup:['其余节目','顺路才去','强烈推荐','今晚必看'],
@@ -809,7 +827,9 @@ zh:{code:'中',name:'中文',
  reset:'重置', done:'完成', language:'语言', theme:'主题',
  timeline:'时间轴', collapse:'收起时间轴', expand:'展开时间轴',
  nowLbl:'跳到当前时刻',
- shareLink:'复制这个语言版本的链接', sharePlan:'复制这条路线的链接', copied:'链接已复制',
+ shareLink:'复制这个语言版本的链接', sharePlan:'分享这条路线', copied:'链接已复制',
+ sharePlanBtn:'把今晚发给朋友',
+ shareIntro:'我的 Taiteiden yö，{n} 站：', shareOpens:'用这个规划器打开，三种语言都行。',
  openShort:'平时不开放', openDoors:'平时不开的门',
  openDoorsSub:'这个地方平时不对公众开放，或者不在这个时段开放。今晚开。',
  rareShort:'难得一见', rareLong:'错过要等很久',
@@ -941,6 +961,22 @@ function syncURL(){
   }
   history.replaceState(null,'',u.toString());
 }
+function planText(){
+  const items=buildPlan();
+  return t('shareIntro',{n:items.length})+'\n'+
+    items.map(v=>`${fmt(v.arrive)}  ${title(v.e)} · ${venue(v.e)}`).join('\n')+
+    '\n\n'+t('shareOpens');
+}
+/* Hand it to the phone's own share sheet when there is one, so it lands in
+   whatever the two of you actually talk in. Copy to the clipboard otherwise. */
+async function sharePlanOut(){
+  const url=shareURL(true);
+  if(navigator.share){
+    try{await navigator.share({title:'Taiteiden yö 2026',text:planText(),url});return}
+    catch(e){if(e&&e.name==='AbortError')return}
+  }
+  await copyLink(true);
+}
 async function copyLink(withPlan){
   const url=shareURL(withPlan);
   try{await navigator.clipboard.writeText(url)}
@@ -996,8 +1032,12 @@ function passStatic(e){
   if(shelter==='out'&&e.io==='in')return false;
   return true;
 }
+/* All three modes are relative to where the slider is, or the slider would be
+   a clock rather than a control. "Rest of the night" is everything that has
+   not finished yet, which is also what you actually want at 21:00: not the
+   choir that sang at five. */
 function passTime(e){
-  if(mode==='all')return true;
+  if(mode==='all')return e.e>T;
   if(mode==='now')return e.s<=T&&e.e>T;
   return e.s>=T&&e.s<=T+45;
 }
@@ -1197,6 +1237,7 @@ function rowHTML(e){
   if(e.x)b.push(`<span class="bdg gone">${t('cancelled')}</span>`);
   if(e.nn)b.push(`<span class="bdg sess">${t('sittingBadge',{n:e.n,m:e.nn})}</span>`);
   if(live&&mode!=='now')b.push(`<span class="bdg live">${t('onNowBadge')}</span>`);
+  else if(!live&&e.s>T&&e.s-T<=90)b.push(`<span class="bdg soon">${t('startsIn',{n:e.s-T})}</span>`);
   if(e.bk)b.push(`<span class="bdg warn">${t('bookingShort')}</span>`);
   else if(e.lim)b.push(`<span class="bdg warn">${t('limitedShort')}</span>`);
   if(e.op)b.push(`<span class="bdg door">${t('openShort')}</span>`);
@@ -1323,6 +1364,8 @@ function renderPlan(){
         </div></div>`;
     });
     body+='</div>';
+    body+=`<button class="btn-accent share-plan" data-share="plan" style="${rv(3)}">
+      <svg><use href="#i-share"/></svg>${t('sharePlanBtn')}</button>`;
   }
   $('#sbody').innerHTML=body;
 }
@@ -1447,7 +1490,9 @@ document.addEventListener('click',ev=>{
     if(!plan.some(p=>p.i===fav.dataset.fav))favBurst(fav);
     toggleFav(fav.dataset.fav);return}
   const sh=ev.target.closest('[data-share]');
-  if(sh){ev.preventDefault();copyLink(sh.dataset.share==='plan');return}
+  if(sh){ev.preventDefault();
+    if(sh.dataset.share==='plan')sharePlanOut();else copyLink(false);
+    return}
   const at=ev.target.closest('[data-at]');
   if(at){
     ev.stopPropagation();
@@ -1486,7 +1531,7 @@ function loadPreset(k){
   toast(t('loaded',{n:(p[lang]||p.en).n}));
 }
 $('#clearPlan').onclick=()=>{plan=[];savePlan();render();toast(t('cleared'))};
-$('#sharePlan').onclick=()=>copyLink(true);
+$('#sharePlan').onclick=()=>sharePlanOut();
 $('#sharePlan').title=t('sharePlan');
 /* ---- the blast ----
    burstParts and favBurst are Festarri's, function for function. The palette
@@ -1566,7 +1611,10 @@ const FILTERS={
   when:{title:()=>t('whenQ'),render:()=>`<div class="wrap">${
     [['now','onNow'],['soon','soon'],['all','all']].map(([v,k])=>
       `<button class="opt" data-when="${v}" aria-pressed="${mode===v}">
-        <span class="ck"><svg><use href="#i-check"/></svg></span>${t(k)}</button>`).join('')}</div>`},
+        <span class="ck"><svg><use href="#i-check"/></svg></span>${t(k)}</button>`).join('')}</div>
+    ${[['now','onNow','whenNowSub'],['soon','soon','whenSoonSub'],['all','all','whenAllSub']].map(([v,k,sub])=>
+      `<div class="info"><span class="ic"><svg><use href="#i-clock"/></svg></span>
+       <span class="tx"><b>${t(k)}</b><span>${t(sub)}</span></span></div>`).join('')}`},
   rank:{title:()=>t('rankQ'),render:()=>`<h3>${t('rank')}</h3><div class="wrap">${
     [3,2,1,0].map(v=>`<button class="opt" data-rank="${v}" aria-pressed="${minRank===v}" style="--sw:var(--r${v})">
       <span class="ck"><svg><use href="#i-check"/></svg></span><i></i>${t('rankPill')[v]}</button>`).join('')}</div>
