@@ -1246,7 +1246,7 @@ function renderPlan(){
   }
   $('#sbody').innerHTML=body;
 }
-function openDetail(id,fromMap){
+function openDetail(id,fromMap,keepScroll){
   const e=byId[id];if(!e)return;
   sel=id;view='detail';
   const inPlan=plan.some(p=>p.i===id),w=wxAt(e.s);
@@ -1310,16 +1310,18 @@ function openDetail(id,fromMap){
     $('span',rm).textContent=o?t('readLess'):t('readMore')};
   $('#dFav').onclick=ev=>{
     if(!plan.some(x=>x.i===id))favBurst(ev.currentTarget);
-    toggleFav(id);openDetail(id,true)};
+    toggleFav(id);openDetail(id,true,true)};
+  if(!keepScroll)$('#sbody').scrollTop=0;
   if(!fromMap)focusOn(e);
   if(snapIdx===0)setSnap(1);
-  syncMarkers();drawTimeline();
+  syncMarkers();if(tlOpen)drawTimeline();
 }
 
 /* ---------------- render + chrome ---------------- */
 function measureChrome(){
   document.documentElement.style.setProperty('--tl-h',$('.timeline').offsetHeight+'px');
 }
+let lastView=null;
 function render(){
   $('#clock').textContent=fmt(T);
   $('#clock').dataset.off=Math.abs(T-clampT(nowMin()))>=10?'1':'0';
@@ -1331,6 +1333,8 @@ function render(){
   if(view==='plan')renderPlan();
   else if(view==='search')renderSearch();
   else if(view!=='detail')renderList();
+  if(lastView!==view&&view!=='detail'){$('#sbody').scrollTop=0}
+  lastView=view;
   syncMarkers();
   if(tlOpen)drawTimeline();
   measureChrome();
@@ -1387,7 +1391,7 @@ function toggleFav(id){
     plan.push({i:id,at});toast(t('added'));
   }else{plan.splice(k,1);toast(t('removed'))}
   savePlan();
-  if(view==='detail'&&sel)openDetail(sel,true);
+  if(view==='detail'&&sel)openDetail(sel,true,true);   /* refreshing the button must not scroll away */
   render();
   setTimeout(()=>{justToggled=null},600);
 }
