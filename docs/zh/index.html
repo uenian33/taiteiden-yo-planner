@@ -7,6 +7,9 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23B1D18A'%3E%3Cpath d='M12 10L9.721 5.852A2.6 2.6 0 1 1 14.279 5.852Z'/%3E%3Cpath d='M13.732 11L16.185 6.952A2.6 2.6 0 1 1 18.464 10.899Z'/%3E%3Cpath d='M13.732 13L18.464 13.101A2.6 2.6 0 1 1 16.185 17.048Z'/%3E%3Cpath d='M12 14L14.279 18.148A2.6 2.6 0 1 1 9.721 18.148Z'/%3E%3Cpath d='M10.268 13L7.815 17.048A2.6 2.6 0 1 1 5.536 13.101Z'/%3E%3Cpath d='M10.268 11L5.536 10.899A2.6 2.6 0 1 1 7.815 6.952Z'/%3E%3Ccircle cx='12' cy='12' r='1.4'/%3E%3C/svg%3E">
 <meta name="description" content="Time-scrubbed map of all 423 sessions of Taiteiden yo, Helsinki, 20 August 2026, ranked.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://unpkg.com" crossorigin>
+<link rel="preconnect" href="https://a.basemaps.cartocdn.com" crossorigin>
+<link rel="preconnect" href="https://helsinkifestival.fi">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,300;8..144,400;8..144,500;8..144,600;8..144,700;8..144,800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -184,7 +187,7 @@ img{display:block;max-width:100%}
 .mk-r0 .bub{width:12px;height:12px;border-width:1.5px;background:var(--r0);opacity:.7}
 .mk-r0 .bub svg,.mk-r0 .stem{display:none}
 .mk .lab{margin-bottom:3px;order:-1;max-width:160px;padding:2px 7px;border-radius:var(--corner-s);
-  background:var(--glass);backdrop-filter:blur(6px);box-shadow:var(--elev-1);
+  background:var(--surface);box-shadow:var(--elev-1);
   color:var(--on-surface);font:700 10px/14px var(--font);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mk-r1 .lab,.mk-r0 .lab{display:none}
@@ -335,9 +338,11 @@ img{display:block;max-width:100%}
 .rows{display:flex;flex-direction:column;gap:8px}
 .row{display:flex;align-items:center;gap:11px;padding:8px;cursor:pointer;text-align:left;
   border:0;width:100%;background:var(--surface-container);border-radius:var(--corner-l);
-  transition:transform var(--dur-short4) var(--spring),box-shadow var(--dur-short3);
-  animation:in var(--dur-med4) var(--ease-emph-decel) both}
-@keyframes in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  transition:transform var(--dur-short4) var(--spring),box-shadow var(--dur-short3)}
+/* The whole programme is 423 rows. Off-screen ones are skipped for layout and
+   paint entirely; the remembered height keeps the scrollbar and any restored
+   scroll position honest. One animation on the panel replaced 423 on the rows. */
+.rows>.row{content-visibility:auto;contain-intrinsic-size:auto 97px}
 .row:active{transform:scale(.985)}
 .row.sel{box-shadow:inset 0 0 0 2px var(--primary)}
 .row .thumb{position:relative;width:66px;height:66px;flex:0 0 66px;border-radius:var(--corner-m);
@@ -561,7 +566,11 @@ img{display:block;max-width:100%}
   .leaflet-control-zoom{display:block}
   .leaflet-top.leaflet-right{margin-top:10px}
 }
-@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms !important;transition-duration:.01ms !important}}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none !important;transition:none !important}
+  /* asking for no motion usually means the device is also glad to skip these */
+  .pill,.circle-btn,.seg,.tl-inner,.mk .lab{backdrop-filter:none;background:var(--surface)}
+}
 </style>
 </head>
 <body>
@@ -1183,7 +1192,10 @@ function fitTo(list){
 }
 
 /* ---------------- timeline ---------------- */
+let densityCache={key:null,val:null};
 function density(){
+  const key=[...cats].sort().join(',')+'|'+shelter;
+  if(densityCache.key===key)return densityCache.val;
   const pool=EV.filter(e=>(!cats.size||cats.has(e.c))&&
     !(shelter==='in'&&e.io==='out')&&!(shelter==='out'&&e.io==='in'));
   const all=[],top=[];
@@ -1191,7 +1203,8 @@ function density(){
     const live=pool.filter(e=>e.s<=m&&e.e>m);
     all.push(live.length);top.push(live.filter(e=>e.r>=2).length);
   }
-  return {all,top};
+  densityCache={key,val:{all,top}};
+  return densityCache.val;
 }
 function area(vals,max,h,y0){
   const step=840/(vals.length-1);
@@ -1229,17 +1242,23 @@ function drawTimeline(){
     $('#tlTicks').innerHTML=[12,14,16,18,20,22,24,26]
       .map(h=>`<span>${String(h%24).padStart(2,'0')}:00</span>`).join('');
 }
-let scrubbing=false;
+let scrubbing=false,scrubRAF=0,scrubX=0,trackRect=null;
 function scrubFrom(x){
   if(mode==='all'){mode='now';syncPills();toast(t('scrubbed'))}
-  const r=$('#tlTrack').getBoundingClientRect();
-  setT(T0+Math.round(((x-r.left)/r.width)*840/5)*5);
+  scrubX=x;
+  if(scrubRAF)return;                  /* pointermove fires far faster than we can paint */
+  scrubRAF=requestAnimationFrame(()=>{
+    scrubRAF=0;
+    const r=trackRect||$('#tlTrack').getBoundingClientRect();
+    setT(T0+Math.round(((scrubX-r.left)/r.width)*840/5)*5);
+  });
 }
 $('#tlTrack').addEventListener('pointerdown',e=>{
-  scrubbing=true;$('#tlTrack').setPointerCapture(e.pointerId);scrubFrom(e.clientX);e.preventDefault()});
+  scrubbing=true;trackRect=$('#tlTrack').getBoundingClientRect();
+  $('#tlTrack').setPointerCapture(e.pointerId);scrubFrom(e.clientX);e.preventDefault()});
 $('#tlTrack').addEventListener('pointermove',e=>{if(scrubbing)scrubFrom(e.clientX)});
-$('#tlTrack').addEventListener('pointerup',()=>scrubbing=false);
-$('#tlTrack').addEventListener('pointercancel',()=>scrubbing=false);
+$('#tlTrack').addEventListener('pointerup',()=>{scrubbing=false;trackRect=null});
+$('#tlTrack').addEventListener('pointercancel',()=>{scrubbing=false;trackRect=null});
 $('#tlsvg').addEventListener('keydown',e=>{
   const step=e.shiftKey?60:15;
   if(e.key==='ArrowLeft'){setT(T-step);e.preventDefault()}
@@ -1307,18 +1326,28 @@ function rowHTML(e){
       <svg class="f ${justToggled===e.i?(inPlan?'bi--sel':'bi--unsel'):''}"><use href="#i-bloom"/></svg></button>
   </div>`;
 }
+let listSig=null;
+function listHTML(list){
+  return [3,2,1,0].map(r=>{
+    const items=list.filter(e=>e.r===r);
+    if(!items.length)return '';
+    return `<div class="group-h" style="${rv(r)}"><i></i><b>${t('rankGroup')[r]}</b><span>${items.length}</span></div>
+            <div class="rows">${items.map(rowHTML).join('')}</div>`}).join('');
+}
 function renderList(){
   const list=visible().sort((a,b)=>b.r-a.r||a.s-b.s);
   $('#sheetTitle').textContent=t(mode==='now'?'onNow':mode==='soon'?'soon':'all');
   $('#sheetSub').textContent=t('count',{a:list.length,b:EV.length,t:fmt(T)});
   $('#backBtn').hidden=true;$('#clearPlan').hidden=true;
   if(!list.length){
+    if(listSig==='empty')return;
+    listSig='empty';
     $('#sbody').innerHTML=`<div class="empty"><h3>${t('nothing')}</h3><p>${t('nothingSub')}</p></div>`;return}
-  $('#sbody').innerHTML=[3,2,1,0].map(r=>{
-    const items=list.filter(e=>e.r===r);
-    if(!items.length)return '';
-    return `<div class="group-h" style="${rv(r)}"><i></i><b>${t('rankGroup')[r]}</b><span>${items.length}</span></div>
-            <div class="rows">${items.map(rowHTML).join('')}</div>`}).join('');
+  const sig=['list',lang,mode,T,sel,plan.length,list.length,list[0]&&list[0].i,
+             list[list.length-1]&&list[list.length-1].i].join('|');
+  if(sig===listSig)return;             /* same rows, same badges: leave the DOM alone */
+  listSig=sig;
+  $('#sbody').innerHTML=listHTML(list);
 }
 function renderSearch(){
   const list=visible().sort((a,b)=>b.r-a.r||a.s-b.s);
@@ -1514,14 +1543,17 @@ function render(){
   $('#tlSub').innerHTML=t('onCount',{a:onNow.length,b:onNow.filter(e=>e.r>=2).length})+
     ` · ${w[1]}°C · ${w[2]}%`+(T>=SUNSET?' · '+t('afterSunset'):'');
   $('#searchbar').hidden=view!=='search';
-  if(view==='plan')renderPlan();
-  else if(view==='search')renderSearch();
-  else if(view!=='detail')renderList();
+  if(view==='plan'){listSig=null;renderPlan()}
+  else if(view==='search'){listSig=null;renderSearch()}
+  else if(view==='detail')listSig=null;
+  else renderList();
   if(lastView!==view&&view!=='detail'){$('#sbody').scrollTop=0}
   lastView=view;
   syncMarkers();
   if(tlOpen)drawTimeline();
-  measureChrome();
+  /* measureChrome reads a layout property, which after writing the list means
+     laying the whole list out synchronously. The dock only changes size when it
+     is opened, closed, resized or relabelled, so it is measured there instead. */
   $('#planN').textContent=plan.length;
   $('#planPill').setAttribute('aria-pressed',view==='plan');
   $('.o',$('#planPill')).hidden=view==='plan';
@@ -1542,7 +1574,7 @@ function applyLang(){
   $('#clearSheet').textContent=t('reset');
   $('#applyBtn').textContent=t('done');
   $('#tlToggle').setAttribute('aria-label',tlOpen?t('collapse'):t('expand'));
-  syncPills();relabelMarkers();syncURL();
+  syncPills();relabelMarkers();syncURL();measureChrome();
   try{localStorage.setItem('ty26lang',lang)}catch(e){}
 }
 document.addEventListener('click',ev=>{
