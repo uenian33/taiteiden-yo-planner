@@ -317,7 +317,7 @@ img{display:block;max-width:100%}
   display:grid;place-items:center}
 .searchbar button svg{width:15px;height:15px}
 .sbody{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;
-  padding:0 14px calc(20px + var(--tl-h));scrollbar-width:none}
+  padding:0 14px calc(28px + var(--tl-h) + var(--sheet-y,0px));scrollbar-width:none}
 .sbody::-webkit-scrollbar{display:none}
 .sbody.locked{overflow:hidden}
 
@@ -460,7 +460,7 @@ img{display:block;max-width:100%}
   color:var(--on-surface-variant);font:500 12px/16px var(--font)}
 .leg svg{width:14px;height:14px;flex:0 0 14px}
 .leg.bad{color:var(--warn-ink)}
-.share-plan{width:100%;margin-top:18px;background:var(--rk-bg);color:var(--rk-ink)}
+.share-plan{width:100%;margin-top:20px;margin-bottom:4px;background:var(--rk-bg);color:var(--rk-ink)}
 .presets{display:flex;flex-direction:column;gap:8px}
 .preset{display:flex;gap:11px;align-items:flex-start;padding:12px;border:0;cursor:pointer;
   text-align:left;width:100%;background:var(--surface-container);border-radius:var(--corner-l);
@@ -506,9 +506,21 @@ img{display:block;max-width:100%}
   transition:background var(--dur-short2),color var(--dur-short2)}
 .opt .ck{width:0;overflow:hidden;transition:width var(--dur-short3) var(--ease-emphasized)}
 .opt .ck svg{width:15px;height:15px}
+.opt>svg{width:17px;height:17px;flex:0 0 17px}
 .opt[aria-pressed="true"]{background:var(--primary-container);color:var(--on-primary-container)}
 .opt[aria-pressed="true"] .ck{width:15px}
 .opt i{width:10px;height:10px;border-radius:50%;background:var(--sw,var(--outline))}
+.linkrow{display:flex;align-items:center;gap:10px;width:100%;height:48px;padding:0 14px;
+  border:0;border-radius:var(--corner-full);cursor:pointer;text-align:left;
+  background:var(--surface-container);color:var(--on-surface)}
+.linkrow>svg{width:17px;height:17px;flex:0 0 17px;color:var(--on-surface-variant)}
+.linkrow .u{flex:1;min-width:0;display:flex;align-items:baseline;
+  font:500 13px/18px var(--mono)}
+.linkrow .u .p{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  color:var(--on-surface-variant)}
+.linkrow .u .q{flex:0 0 auto;color:var(--on-surface);font-weight:700}
+.linkrow .cp{flex:0 0 auto;color:var(--primary);font:700 12px/16px var(--font);
+  letter-spacing:.6px;text-transform:uppercase}
 .ffoot{display:flex;gap:10px;padding:10px 18px calc(18px + env(safe-area-inset-bottom));align-items:center}
 .btn-ghost{height:46px;padding:0 18px;border:0;border-radius:var(--corner-full);background:none;
   color:var(--on-surface-variant);cursor:pointer;font:600 14px/20px var(--font)}
@@ -719,7 +731,7 @@ en:{code:'EN',name:'English',
  reset:'Reset', done:'Done', language:'Language', theme:'Theme',
  timeline:'Timeline', collapse:'Collapse the timeline', expand:'Open the timeline',
  nowLbl:'Jump to the time it is now',
- shareLink:'Copy a link in this language', sharePlan:'Share this plan', copied:'Link copied',
+ shareLink:'Copy a link in this language', sharePlan:'Share this plan', copied:'Link copied', copyWord:'Copy',
  sharePlanBtn:'Send this evening to a friend',
  shareIntro:'My Night of the Arts, {n} stops:', shareOpens:'Opens in this planner, in any of its three languages.',
  openShort:'Normally closed', openDoors:'Doors that are normally shut',
@@ -773,7 +785,7 @@ fi:{code:'FI',name:'Suomi',
  reset:'Tyhjennä', done:'Valmis', language:'Kieli', theme:'Teema',
  timeline:'Aikajana', collapse:'Pienennä aikajana', expand:'Avaa aikajana',
  nowLbl:'Hyppää nykyhetkeen',
- shareLink:'Kopioi linkki tällä kielellä', sharePlan:'Jaa tämä ilta', copied:'Linkki kopioitu',
+ shareLink:'Kopioi linkki tällä kielellä', sharePlan:'Jaa tämä ilta', copied:'Linkki kopioitu', copyWord:'Kopioi',
  sharePlanBtn:'Lähetä tämä ilta kaverille',
  shareIntro:'Minun Taiteiden yöni, {n} kohdetta:', shareOpens:'Aukeaa tässä suunnittelijassa, millä tahansa sen kolmesta kielestä.',
  openShort:'Normaalisti kiinni', openDoors:'Ovet jotka ovat yleensä kiinni',
@@ -827,7 +839,7 @@ zh:{code:'中',name:'中文',
  reset:'重置', done:'完成', language:'语言', theme:'主题',
  timeline:'时间轴', collapse:'收起时间轴', expand:'展开时间轴',
  nowLbl:'跳到当前时刻',
- shareLink:'复制这个语言版本的链接', sharePlan:'分享这条路线', copied:'链接已复制',
+ shareLink:'复制这个语言版本的链接', sharePlan:'分享这条路线', copied:'链接已复制', copyWord:'复制',
  sharePlanBtn:'把今晚发给朋友',
  shareIntro:'我的 Taiteiden yö，{n} 站：', shareOpens:'用这个规划器打开，三种语言都行。',
  openShort:'平时不开放', openDoors:'平时不开的门',
@@ -1651,7 +1663,13 @@ const FILTERS={
       `<button class="opt" data-theme="${v}" aria-pressed="${(isDark()?'dark':'light')===v}">
         <span class="ck"><svg><use href="#i-check"/></svg></span>${t(k)}</button>`).join('')}</div>
     <h3>${t('shareLink')}</h3>
-    <button class="opt" data-share="lang"><svg><use href="#i-share"/></svg>${shareURL(false).replace(/^https?:\/\//,'')}</button>`}
+    ${(()=>{const u=shareURL(false).replace(/^https?:\/\//,'');
+      const cut=u.search(/(\?|\/(en|fi|zh|ch)\/?$)/i);
+      const head=cut<0?u:u.slice(0,cut),tail=cut<0?'':u.slice(cut);
+      return `<button class="linkrow" data-share="lang">
+        <svg><use href="#i-share"/></svg>
+        <span class="u"><span class="p">${esc(head)}</span><span class="q">${esc(tail)}</span></span>
+        <span class="cp">${t('copyWord')}</span></button>`})()}`}
 };
 function openSheet(k){
   openKey=k;$('#fTitle').textContent=FILTERS[k].title();
@@ -1714,10 +1732,12 @@ function calcSnaps(){
   snaps=[Math.max(200,Math.round(h-tl-116)),Math.round(h*0.44),72];
 }
 function setSnap(i,animate=true){
-  if(!mobile()){sbody.classList.remove('locked');return}
+  if(!mobile()){sbody.classList.remove('locked');
+    document.documentElement.style.setProperty('--sheet-y','0px');return}
   calcSnaps();snapIdx=Math.max(0,Math.min(2,i));
   sheet.classList.toggle('dragging',!animate);
   sheet.style.setProperty('--y',snaps[snapIdx]+'px');
+  document.documentElement.style.setProperty('--sheet-y',snaps[snapIdx]+'px');
   sbody.classList.toggle('locked',snapIdx===0);
   if(!animate)requestAnimationFrame(()=>sheet.classList.remove('dragging'));
 }
