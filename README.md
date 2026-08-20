@@ -1,0 +1,69 @@
+# Night of the Arts Planner — Helsinki, 20 August 2026
+
+A time-scrubbed map of every session of **Taiteiden yö 2026**, ranked, in English,
+Finnish and Chinese.
+
+**Live: https://uenian33.github.io/taiteiden-yo-planner/**
+
+The festival publishes ~400 events across one evening and a flat A–Z list is
+useless at 19:00 when you are standing on a street corner in the rain. This turns
+the programme into three things you can actually act on: *what is happening right
+now near me*, *which of it is worth rearranging the evening for*, and *can I get
+from this one to that one in time*.
+
+## What it does
+
+- **Timeline scrubber.** Drag it and the map and list follow. The band behind it
+  is the hourly rain probability, the shaded half is after sunset (21:00), the
+  filled area is how many events are running, and the magenta dots are the seven
+  things that only exist tonight. Collapses to a pill when you want the screen back.
+- **Ranks, not favourites.** Every session is R3 (unmissable — exists tonight only
+  and nothing substitutes for it), R2 (strong enough to reroute around), R1 (good
+  if you are passing) or unranked. Ranks drive the marker colour and size, and each
+  ranked session carries a written note explaining *why* it sits where it does.
+- **Real map.** Vector basemap plus a satellite layer, light and dark.
+- **My plan.** Add stops, set the arrival time for each one, and the planner works
+  out the walk between them. It distinguishes a fixed performance (it ends when it
+  ends) from an open-all-evening venue (elastic — you stay until you have to leave),
+  and warns when a stop no longer fits. Four ready-made routes are included.
+- **Search** across event name, venue, street and description, in either language.
+- **Practical flags** per event: booking required, limited seating, outdoors with
+  tonight's rain probability, cancelled, and which sitting of a repeated piece
+  this is.
+
+## Data
+
+- Programme: the festival's own API, `helsinkifestival.fi/taiteidenyo/wp-json/events/v1/search`,
+  fetched 20 August 2026 in both `fi` and `en`. 384 events become **423 sessions**
+  because 27 of them are performed more than once and the flat listing hides that —
+  Temppeliaukio has three sittings, *Landmarks* two, *TOCCATA!* two.
+- Weather: [Open-Meteo](https://open-meteo.com/), hourly, for 60.17 N 24.94 E.
+- Basemaps: [CARTO](https://carto.com/attributions) over OpenStreetMap, and Esri
+  World Imagery for the satellite layer.
+- Event photographs are served from the festival's own CDN.
+
+The published copy quotes only a short excerpt of each official description and
+links to the festival's page for the rest; `build_public.py` produces it from the
+local build.
+
+The **ranks and the notes are editorial** — one person's opinion about one evening,
+not the organisers'. Times and venues come from the official listing; check it
+before you set out, because programmes change on the day.
+
+## Running it locally
+
+```
+python3 serve.py 8731     # then open http://127.0.0.1:8731
+```
+
+`index.html` is self-contained apart from the map tiles and fonts, so you can also
+just open the file, or drop it on a phone.
+
+## Layout
+
+| | |
+|---|---|
+| `index.html` | the app, with the full programme text |
+| `docs/index.html` | what GitHub Pages serves, descriptions excerpted |
+| `build_public.py` | makes `docs/` from `index.html` |
+| `serve.py` | local static server |
