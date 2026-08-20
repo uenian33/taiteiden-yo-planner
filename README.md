@@ -88,6 +88,12 @@ pill rather than appearing, measured before and after and animated between.
 The one colour that is not Festarri's is the rank-3 magenta, which is the colour
 of the giraffes.
 
+Opening an event is a forward move and going back is the same move reversed, so
+the panel travels on one axis and the photograph settles rather than appears.
+Back returns you to the view you left, at the scroll position you left it at,
+with the row you opened still marked — including back into a search with its
+query intact, or into the middle of a plan.
+
 ## Data
 
 - Programme: the festival's own API, `helsinkifestival.fi/taiteidenyo/wp-json/events/v1/search`,

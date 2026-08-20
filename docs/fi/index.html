@@ -429,6 +429,13 @@ img{display:block;max-width:100%}
 .dsec h3{margin:0 0 8px;color:var(--on-surface-variant);
   font:700 11px/16px var(--font);letter-spacing:1.1px;text-transform:uppercase}
 .dsec p{margin:0;font:400 15px/23px var(--font);white-space:pre-wrap}
+/* Opening an event is a forward move and going back is the same move reversed,
+   so the panel travels on one axis. The photograph settles rather than appears,
+   which is what says the thing you tapped is the thing that opened. */
+@keyframes body-in{from{opacity:0;transform:translateX(var(--from,18px))}to{opacity:1;transform:none}}
+@keyframes hero-in{from{opacity:.35;transform:scale(1.07)}to{opacity:1;transform:none}}
+.sbody.entering{animation:body-in 300ms var(--ease-emph-decel) both}
+.dhero img{animation:hero-in 520ms var(--ease-emph-decel) both}
 .desc{position:relative;overflow:hidden;max-height:92px;
   transition:max-height var(--dur-med4) var(--ease-emphasized)}
 .desc.open{max-height:6000px}
@@ -1413,6 +1420,7 @@ function renderPlan(){
 }
 function openDetail(id,fromMap,keepScroll){
   const e=byId[id];if(!e)return;
+  if(view!=='detail')returnTo={view,scroll:$('#sbody').scrollTop};
   sel=id;view='detail';
   const inPlan=plan.some(p=>p.i===id),w=wxAt(e.s);
   const warn=[];
@@ -1476,17 +1484,28 @@ function openDetail(id,fromMap,keepScroll){
   $('#dFav').onclick=ev=>{
     if(!plan.some(x=>x.i===id))favBurst(ev.currentTarget);
     toggleFav(id);openDetail(id,true,true)};
-  if(!keepScroll)$('#sbody').scrollTop=0;
+  if(!keepScroll){$('#sbody').scrollTop=0;enterBody(1)}
   if(!fromMap)focusOn(e);
   if(snapIdx===0)setSnap(1);
   syncMarkers();if(tlOpen)drawTimeline();
 }
 
 /* ---------------- render + chrome ---------------- */
+function enterBody(dir){
+  const el=$('#sbody');
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  el.style.setProperty('--from',(18*dir)+'px');
+  el.classList.remove('entering');
+  void el.offsetWidth;                 /* restart the animation on a re-entry */
+  el.classList.add('entering');
+}
 function measureChrome(){
   document.documentElement.style.setProperty('--tl-h',$('.timeline').offsetHeight+'px');
 }
 let lastView=null;
+/* Where the reader was before they opened something: the view, and how far down
+   it they had scrolled. Going back without this is going back to the top. */
+let returnTo=null;
 function render(){
   $('#clock').textContent=fmt(T);
   $('#clock').dataset.off=Math.abs(T-clampT(nowMin()))>=10?'1':'0';
@@ -1636,7 +1655,16 @@ function toast(msg){
   $('#snackText').textContent=msg;$('#snack').classList.add('show');
   clearTimeout(toastT);toastT=setTimeout(()=>$('#snack').classList.remove('show'),2400);
 }
-$('#backBtn').onclick=()=>{view='list';sel=null;query='';$('#searchInput').value='';render()};
+$('#backBtn').onclick=()=>{
+  if(view==='detail'&&returnTo){
+    const r=returnTo;returnTo=null;
+    view=r.view;lastView=view;          /* not a view change, so keep the scroll */
+    render();
+    $('#sbody').scrollTop=r.scroll;     /* rows are a fixed height, so this lands */
+    enterBody(-1);
+    return;
+  }
+  view='list';sel=null;query='';$('#searchInput').value='';returnTo=null;render()};
 $('#searchBtn').onclick=()=>{
   view='search';sel=null;render();setSnap(2);
   $('#searchInput').placeholder=t('searchPh');
