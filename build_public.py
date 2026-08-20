@@ -41,8 +41,13 @@ def main():
     for e in events:
         e['d'] = trim(e.get('d'))
         e['df'] = trim(e.get('df'))
-    page = src[:m.start(1)] + json.dumps(events, ensure_ascii=False,
-                                         separators=(',', ':')) + src[m.end(1):]
+    # A large JS object literal goes through the JavaScript parser; the same
+    # bytes as a string go through JSON.parse, which is several times faster and
+    # is the difference between a slow phone blocking for 350ms and for 130ms.
+    blob = json.dumps(events, ensure_ascii=False, separators=(',', ':'))
+    blob = (blob.replace('\\', '\\\\').replace("'", "\\'")
+                .replace('\u2028', '\\u2028').replace('\u2029', '\\u2029'))
+    page = src[:m.start(1)] + "JSON.parse('" + blob + "')" + src[m.end(1):]
 
     docs = os.path.join(ROOT, 'docs')
     os.makedirs(docs, exist_ok=True)
